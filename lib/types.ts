@@ -56,6 +56,12 @@ export interface Plant {
   event?: PlantEvent;
 }
 
+export interface StrainStat {
+  harvests: number;
+  grams: number;
+  earnings: number;
+}
+
 export interface GameState {
   money: number;
   day: number;
@@ -70,6 +76,16 @@ export interface GameState {
   prestigeCount: number;
   prestigePoints: number;
   prestigeUpgrades: Record<string, number>;
+  // stats — run-scoped (reset on prestige)
+  runHarvests: number;
+  runGrams: number;
+  runBestBatch: number;
+  // stats — all-time (persist across prestiges)
+  allTimeEarnings: number;
+  allTimeHarvests: number;
+  allTimeGrams: number;
+  allTimeBestBatch: number;
+  strainStats: Record<string, StrainStat>;
 }
 
 export type GameAction =

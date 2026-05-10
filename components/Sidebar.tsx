@@ -6,16 +6,26 @@ import StrainShop from "./StrainShop";
 import UpgradesShop from "./UpgradesShop";
 import PrestigePanel from "./PrestigePanel";
 import SavePanel from "./SavePanel";
+import StatsPanel from "./StatsPanel";
 import ActivityLog from "./ActivityLog";
 
-type Tab = "seeds" | "upgrades" | "prestige" | "save";
+type Tab = "seeds" | "upgrades" | "prestige" | "stats" | "save";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "seeds", label: "🌱 Seeds" },
-  { id: "upgrades", label: "⬆️ Upgrades" },
-  { id: "prestige", label: "🏆 Prestige" },
-  { id: "save", label: "💾 Save" },
+  { id: "seeds", label: "🌱" },
+  { id: "upgrades", label: "⬆️" },
+  { id: "prestige", label: "🏆" },
+  { id: "stats", label: "📊" },
+  { id: "save", label: "💾" },
 ];
+
+const TAB_LABELS: Record<Tab, string> = {
+  seeds: "Seeds",
+  upgrades: "Upgrades",
+  prestige: "Prestige",
+  stats: "Stats",
+  save: "Save",
+};
 
 export default function Sidebar() {
   const [tab, setTab] = useState<Tab>("seeds");
@@ -30,7 +40,8 @@ export default function Sidebar() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 py-2.5 text-xs font-medium transition-colors relative ${
+              title={TAB_LABELS[t.id]}
+              className={`flex-1 py-2.5 text-sm transition-colors relative ${
                 tab === t.id
                   ? "bg-zinc-800 text-white border-b-2 border-green-500"
                   : "text-zinc-500 hover:text-zinc-300"
@@ -52,6 +63,7 @@ export default function Sidebar() {
           {tab === "seeds" && <StrainShop />}
           {tab === "upgrades" && <UpgradesShop />}
           {tab === "prestige" && <PrestigePanel />}
+          {tab === "stats" && <StatsPanel />}
           {tab === "save" && <SavePanel />}
         </div>
       </div>

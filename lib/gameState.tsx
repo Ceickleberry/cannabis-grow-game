@@ -186,12 +186,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         state.log,
         `Day ${state.day}: Batch harvested — ${strain.name} ${yieldGrams}g → $${earnings.toLocaleString()} 💰`
       );
+      const prev = state.strainStats[plant.strainId] ?? { harvests: 0, grams: 0, earnings: 0 };
       return {
         ...state,
         money: state.money + earnings,
         lifetimeEarnings: state.lifetimeEarnings + earnings,
         plants,
         log,
+        runHarvests: state.runHarvests + 1,
+        runGrams: state.runGrams + yieldGrams,
+        runBestBatch: Math.max(state.runBestBatch, earnings),
+        allTimeEarnings: state.allTimeEarnings + earnings,
+        allTimeHarvests: state.allTimeHarvests + 1,
+        allTimeGrams: state.allTimeGrams + yieldGrams,
+        allTimeBestBatch: Math.max(state.allTimeBestBatch, earnings),
+        strainStats: {
+          ...state.strainStats,
+          [plant.strainId]: {
+            harvests: prev.harvests + 1,
+            grams: prev.grams + yieldGrams,
+            earnings: prev.earnings + earnings,
+          },
+        },
       };
     }
 
@@ -232,6 +248,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         log,
         prestigeCount: newPrestigeCount,
         prestigePoints: state.prestigePoints + pointsEarned,
+        runHarvests: 0,
+        runGrams: 0,
+        runBestBatch: 0,
       };
     }
 
@@ -300,6 +319,14 @@ const initialState: GameState = {
   prestigeCount: 0,
   prestigePoints: 0,
   prestigeUpgrades: {},
+  runHarvests: 0,
+  runGrams: 0,
+  runBestBatch: 0,
+  allTimeEarnings: 0,
+  allTimeHarvests: 0,
+  allTimeGrams: 0,
+  allTimeBestBatch: 0,
+  strainStats: {},
 };
 
 interface GameContextValue {
