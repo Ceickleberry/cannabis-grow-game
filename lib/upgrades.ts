@@ -61,6 +61,14 @@ export const UPGRADES: Upgrade[] = [
     emoji: "🏭",
     prereq: "extra-slots-1",
   },
+  {
+    id: "canopy-training",
+    name: "Canopy Training Protocol",
+    description: "Trained crew automatically handles pruning, defoliation, and trellising on every plant the moment the window opens.",
+    cost: 1200,
+    emoji: "🌳",
+    prereq: "nutrients",
+  },
 ];
 
 export interface GrowEffects {
@@ -73,6 +81,7 @@ export interface GrowEffects {
   vegetativeSpeedMult: number;
   numSlots: number;
   eventSpawnChance: number;
+  autoTasks: boolean;
 }
 
 export function computeEffects(
@@ -95,6 +104,7 @@ export function computeEffects(
       0.005,
       ((has("climate-ctrl") ? 15 : 30) - pl("ipm-protocol") * 5) / 1000
     ),
+    autoTasks: has("canopy-training"),
   };
 }
 

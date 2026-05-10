@@ -7,6 +7,7 @@ import type { Plant } from "@/lib/types";
 import { effectiveStageDuration } from "@/lib/upgrades";
 import type { GrowEffects } from "@/lib/upgrades";
 import { getPestEvent, eventSeverity } from "@/lib/events";
+import { availableTasksForPlant, PLANT_TASKS } from "@/lib/tasks";
 
 const STAGE_LABELS: Record<string, string> = {
   germination: "Germinating",
@@ -112,6 +113,15 @@ export default function GrowSlot({ slot }: GrowSlotProps) {
   const severity = plant.event ? eventSeverity(plant.event.daysActive) : null;
   const canAffordTreat = activeEvent ? state.money >= activeEvent.treatCost : false;
 
+  const availableTasks = availableTasksForPlant(plant.stage, plant.daysInCurrentStage, plant.completedTasks);
+  const doneTasks = PLANT_TASKS.filter((t) => plant.completedTasks.includes(t.id));
+  const missedTasks = PLANT_TASKS.filter(
+    (t) =>
+      t.stage === plant.stage &&
+      !plant.completedTasks.includes(t.id) &&
+      plant.daysInCurrentStage >= t.windowDays
+  );
+
   const cardBorder =
     plant.stage === "ready"
       ? "border-emerald-500 bg-emerald-950/30"
@@ -158,6 +168,22 @@ export default function GrowSlot({ slot }: GrowSlotProps) {
         </div>
       )}
 
+      {/* Completed + missed task badges */}
+      {(doneTasks.length > 0 || missedTasks.length > 0) && (
+        <div className="flex gap-1 flex-wrap">
+          {doneTasks.map((t) => (
+            <span key={t.id} className="text-xs px-1.5 py-0.5 rounded bg-green-900/60 text-green-400 border border-green-800">
+              {t.emoji} {t.label} ✓
+            </span>
+          ))}
+          {missedTasks.map((t) => (
+            <span key={t.id} className="text-xs px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-600 border border-zinc-700 line-through">
+              {t.emoji} {t.label}
+            </span>
+          ))}
+        </div>
+      )}
+
       {activeEvent && severity && (
         <div className={`rounded-lg border p-2 flex flex-col gap-1.5 ${SEVERITY_COLORS[severity]}`}>
           <div className="flex items-center justify-between">
@@ -169,6 +195,33 @@ export default function GrowSlot({ slot }: GrowSlotProps) {
             </span>
           </div>
           <p className="text-xs opacity-70">{activeEvent.treatLabel}</p>
+        </div>
+      )}
+
+      {/* Available task buttons */}
+      {availableTasks.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap">
+          {availableTasks.map((t) => {
+            const daysLeft = t.windowDays - plant.daysInCurrentStage;
+            const urgent = daysLeft <= 2;
+            return (
+              <button
+                key={t.id}
+                onClick={() => dispatch({ type: "PERFORM_TASK", plantId: plant.id, taskId: t.id })}
+                title={`${t.description} (+${Math.round(t.yieldBonus * 100)}% yield)`}
+                className={`flex-1 text-xs py-1.5 rounded-lg border font-medium transition-colors ${
+                  urgent
+                    ? "bg-red-950 hover:bg-red-900 text-red-300 border-red-700 animate-pulse"
+                    : "bg-lime-950 hover:bg-lime-900 text-lime-300 border-lime-800"
+                }`}
+              >
+                {t.emoji} {t.label}
+                <span className="ml-1 opacity-60 font-normal">
+                  {urgent ? `${daysLeft}d left!` : `+${Math.round(t.yieldBonus * 100)}%`}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 

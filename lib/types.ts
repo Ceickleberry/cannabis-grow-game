@@ -54,6 +54,7 @@ export interface Plant {
   lastWateredDay: number;
   slot: number;
   event?: PlantEvent;
+  completedTasks: string[];
 }
 
 export interface StrainStat {
@@ -98,6 +99,7 @@ export type GameAction =
   | { type: "TOGGLE_PAUSE" }
   | { type: "BUY_UPGRADE"; upgradeId: string }
   | { type: "TREAT_EVENT"; plantId: string }
+  | { type: "PERFORM_TASK"; plantId: string; taskId: string }
   | { type: "PRESTIGE" }
   | { type: "BUY_PRESTIGE_UPGRADE"; upgradeId: string }
   | { type: "LOAD_STATE"; state: GameState };

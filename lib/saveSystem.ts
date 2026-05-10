@@ -83,5 +83,12 @@ export function formatSaveDate(ts: number): string {
 
 /** Merge a saved (possibly older) state with defaults so new fields are populated. */
 export function mergeWithDefaults(saved: Partial<GameState>, defaults: GameState): GameState {
-  return { ...defaults, ...saved };
+  const merged = { ...defaults, ...saved };
+  // Backfill completedTasks on plants from older saves that predate the task system
+  if (merged.plants) {
+    merged.plants = merged.plants.map((p) =>
+      p.completedTasks ? p : { ...p, completedTasks: [] }
+    );
+  }
+  return merged;
 }

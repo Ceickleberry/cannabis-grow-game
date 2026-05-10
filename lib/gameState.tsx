@@ -20,6 +20,7 @@ import {
   computeStartingMoney,
 } from "./prestige";
 import { autoSave, loadAutoSave, mergeWithDefaults } from "./saveSystem";
+import { PLANT_TASKS, availableTasksForPlant, getPlantTask, taskYieldBonus } from "./tasks";
 
 const MAX_LOG = 20;
 
@@ -137,6 +138,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         });
       }
 
+      // Auto-perform canopy tasks when upgrade is purchased
+      if (effects.autoTasks) {
+        newPlants = newPlants.map((p) => {
+          const available = availableTasksForPlant(p.stage, p.daysInCurrentStage, p.completedTasks);
+          if (available.length === 0) return p;
+          const healthGain = available.reduce((sum, t) => sum + t.healthBonus, 0);
+          available.forEach((t) => {
+            log = addLog(log, `Day ${newDay}: 🌳 Auto — ${t.label} on bay ${p.slot + 1}. +${Math.round(t.yieldBonus * 100)}% yield.`);
+          });
+          return {
+            ...p,
+            completedTasks: [...p.completedTasks, ...available.map((t) => t.id)],
+            health: Math.min(100, p.health + healthGain),
+          };
+        });
+      }
+
       return { ...state, day: newDay, plants: newPlants, log };
     }
 
@@ -156,6 +174,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         totalDays: 0,
         lastWateredDay: state.day,
         slot: action.slot,
+        completedTasks: [],
       };
 
       const plants = [...state.plants.filter((p) => p.slot !== action.slot), newPlant];
@@ -178,7 +197,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const strain = getStrain(plant.strainId);
       const effects = computeEffects(state.purchasedUpgrades, state.prestigeUpgrades);
-      const yieldGrams = Math.round(strain.baseYieldGrams * (plant.health / 100) * effects.yieldMultiplier);
+      const bonus = 1 + taskYieldBonus(plant.completedTasks);
+      const yieldGrams = Math.round(strain.baseYieldGrams * (plant.health / 100) * effects.yieldMultiplier * bonus);
       const earnings = Math.round(yieldGrams * strain.pricePerGram * effects.priceMultiplier);
 
       const plants = state.plants.filter((p) => p.id !== action.plantId);
@@ -225,6 +245,32 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         `Day ${state.day}: ${eventDef.name} cleared in bay ${plant.slot + 1}. ${eventDef.emoji}`
       );
       return { ...state, money: state.money - eventDef.treatCost, plants, log };
+    }
+
+    case "PERFORM_TASK": {
+      const plant = state.plants.find((p) => p.id === action.plantId);
+      if (!plant) return state;
+      const task = getPlantTask(action.taskId);
+      if (!task) return state;
+      if (plant.stage !== task.stage) return state;
+      if (plant.completedTasks.includes(task.id)) return state;
+      if (plant.daysInCurrentStage >= task.windowDays) return state;
+
+      const strain = getStrain(plant.strainId);
+      const plants = state.plants.map((p) =>
+        p.id === action.plantId
+          ? {
+              ...p,
+              completedTasks: [...p.completedTasks, task.id],
+              health: Math.min(100, p.health + task.healthBonus),
+            }
+          : p
+      );
+      const log = addLog(
+        state.log,
+        `Day ${state.day}: ${task.emoji} ${task.label} done on ${strain.name} (bay ${plant.slot + 1}). +${Math.round(task.yieldBonus * 100)}% yield.`
+      );
+      return { ...state, plants, log };
     }
 
     case "PRESTIGE": {
